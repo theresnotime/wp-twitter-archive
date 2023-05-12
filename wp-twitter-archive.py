@@ -138,6 +138,8 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
 
 
 def check_ok_cache(title: str) -> bool:
+    if os.path.exists("logs/ok.log") is False:
+        return False
     with open("logs/ok.log", "r", encoding="utf-8") as f:
         return title in f.read()
 
