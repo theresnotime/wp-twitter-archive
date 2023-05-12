@@ -97,6 +97,10 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
     changes = 0
     already_done = 0
     for tweet in cited_tweets:
+        if config.ARCHIVE_ONLY:
+            if check_skip(tweet):
+                print("[!] Archive only mode is enabled, tweet is in pre-skip list")
+                continue
         if check_already_archived(tweet) is None:
             print("[!] Tweet citation does not have an archive-url set")
             try:
@@ -118,7 +122,10 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                     wikitext = wikitext.replace(tweet, modified_cite_params)
                     changes += 1
                 else:
-                    print("[!] Archive only mode is enabled, skipping")
+                    print(
+                        "[!] Archive only mode is enabled, skipping and adding to pre-skip list"
+                    )
+                    add_to_skip(tweet)
             else:
                 if config.VERBOSE:
                     print(tweet_url)
@@ -149,6 +156,18 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
         if already_done == len(cited_tweets):
             cache_ok_title(title)
         print("[i] No changes made")
+
+
+def add_to_skip(tweet: str) -> None | bool:
+    with open("logs/skip.log", "a", encoding="utf-8") as f:
+        f.write(f"{tweet}\n")
+
+
+def check_skip(tweet: str) -> bool:
+    if os.path.exists("logs/skip.log") is False:
+        return False
+    with open("logs/skip.log", "r", encoding="utf-8") as f:
+        return tweet in f.read()
 
 
 def check_ok_cache(title: str) -> bool:
