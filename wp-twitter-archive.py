@@ -21,7 +21,7 @@ def check_available(url: str) -> bool:
         return True
 
 
-def get_latest_snapshot(url: str) -> bool | str:
+def get_latest_snapshot(url: str) -> tuple[str, str] | False:
     """Get the latest snapshot of a URL on the Internet Archive"""
     result = requests.get(f"{config.IA_URL}/wayback/available?url={url}").json()
     if len(result["archived_snapshots"]) == 0:
@@ -79,11 +79,11 @@ def get_tweet_url(username: str, number: str) -> str:
     return f"https://twitter.com/{username}/status/{number}"
 
 
-def check_already_archived(cite_params: str) -> bool | None:
+def check_already_archived(cite_params: str):
     """Check if a tweet citation already has an archive-url set"""
     found = re.findall(r"archive-?url\s?=", cite_params, re.IGNORECASE)
     if len(found) == 0:
-        return None
+        return False
     else:
         return found
 
@@ -150,7 +150,7 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
         print("[i] No changes made")
 
 
-def log_skip_title(tweet: str) -> None | bool:
+def log_skip_title(tweet: str) -> None:
     """Log a title that has been skipped"""
     with open("logs/skip.log", "a", encoding="utf-8") as f:
         f.write(f"{tweet}\n")
