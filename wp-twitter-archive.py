@@ -21,7 +21,7 @@ def check_available(url: str) -> bool:
         return True
 
 
-def get_latest_snapshot(url: str) -> tuple[str, str] | False:
+def get_latest_snapshot(url: str):
     """Get the latest snapshot of a URL on the Internet Archive"""
     result = requests.get(f"{config.IA_URL}/wayback/available?url={url}").json()
     if len(result["archived_snapshots"]) == 0:
