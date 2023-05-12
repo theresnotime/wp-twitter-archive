@@ -106,7 +106,7 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                 print("[!] Tweet citation is malformed, skipping")
                 log_malformed(title)
                 continue
-            
+
             if check_available(tweet_url):
                 latest_snapshot = get_latest_snapshot(tweet_url)
                 modified_cite_params = modify_cite_params(
