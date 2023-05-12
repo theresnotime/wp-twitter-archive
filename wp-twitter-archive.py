@@ -306,8 +306,7 @@ if __name__ == "__main__":
     print(f"[i] Sleeping for {config.SLEEP} seconds between requests")
 
     count = 0
-    # titles = get_titles("api")
-    titles = ["Dedham, Massachusetts"]
+    titles = get_titles("api")
     for title in titles:
         if count < config.RUN_LIMIT:
             count += 1
