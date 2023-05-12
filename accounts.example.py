@@ -1,2 +1,4 @@
 BOT_USERNAME = ""
 BOT_PASSWORD = ""
+IA_KEY = ""
+IA_SECRET = ""

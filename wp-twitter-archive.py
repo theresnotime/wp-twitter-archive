@@ -7,6 +7,7 @@ import os
 import re
 import requests
 import time
+from datetime import date
 from pwiki.wiki import Wiki
 
 __version__ = "0.0.1"
@@ -118,6 +119,14 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                 if config.VERBOSE:
                     print(tweet_url)
                 print("[!] Tweet has not been archived, let's hope it's still live...")
+                result = archive_page(tweet_url)
+                if result.url:
+                    print(f"[✓] Tweet archived at {result.url}")
+                    modified_cite_params = modify_cite_params(
+                        tweet, result.url, date.today(), True
+                    )
+                    wikitext = wikitext.replace(tweet, modified_cite_params)
+                    changes += 1
         else:
             print("[✓] Tweet citation already has an archive-url")
             already_done += 1
@@ -154,17 +163,22 @@ def log_malformed(title: str) -> None:
         f.write(f"{title}\n")
 
 
-# TODO
 def archive_page(url: str) -> None:
     """Archive a page on the Internet Archive"""
     print(f"[+] Caching {url} on the Internet Archive")
-    if config.DRY_RUN is False:
-        requests.get(f"{config.IA_URL}/save/{url}")
+    headers = {"Authorization": f"LOW {accounts.IA_KEY}:{accounts.IA_SECRET}"}
+    result = requests.get(f"https://web.archive.org/save/{url}", headers=headers)
+    return result
 
 
-def modify_cite_params(cite_params: str, archive_url: str, archive_date: str) -> str:
+def modify_cite_params(
+    cite_params: str, archive_url: str, archive_date: str, skip_format: bool = False
+) -> str:
     """Modify the cite params of a tweet citation to include archive-url and archive-date"""
-    date = re.sub(r"(\d{4})(\d{2})(\d{2})\d+", r"\1-\2-\3", archive_date)
+    if skip_format is False:
+        date = re.sub(r"(\d{4})(\d{2})(\d{2})\d+", r"\1-\2-\3", archive_date)
+    else:
+        date = archive_date
     cite_params += f"|archive-url={archive_url}|archive-date={date}"
     return cite_params
 
@@ -261,7 +275,8 @@ if __name__ == "__main__":
     print(f"[i] Sleeping for {config.SLEEP} seconds between requests")
 
     count = 0
-    titles = get_titles("api")
+    # titles = get_titles("api")
+    titles = ["Beavis and Butt-Head", "Bell Labs", "Bruce Perens"]
     for title in titles:
         if count < config.RUN_LIMIT:
             count += 1
