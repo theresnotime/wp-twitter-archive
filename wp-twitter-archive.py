@@ -33,11 +33,19 @@ def get_latest_snapshot(url: str) -> bool | str:
         )
 
 
-def get_titles() -> list:
-    """Get a list of titles from titles.json"""
-    with open("titles.json", encoding="utf-8") as f:
-        data = json.load(f)
-        return data["*"][0]["a"]["*"]
+def get_titles(source: str) -> list:
+    """Get a list of titles"""
+    if source == "file":
+        with open("titles.json", encoding="utf-8") as f:
+            data = json.load(f)
+            return data["*"][0]["a"]["*"]
+    elif source == "api":
+        wiki = Wiki(config.SITE, accounts.BOT_USERNAME, accounts.BOT_PASSWORD)
+        data = wiki.what_transcludes_here("Template:Cite tweet", ns=0)
+        return data
+    else:
+        print("[!] Invalid source")
+        exit()
 
 
 def get_wikitext(title: str) -> str:
@@ -213,7 +221,7 @@ if __name__ == "__main__":
     print(f"[i] Sleeping for {config.SLEEP} seconds between requests")
 
     count = 0
-    titles = get_titles()
+    titles = get_titles('api')
     for title in titles:
         if count < config.RUN_LIMIT:
             count += 1
