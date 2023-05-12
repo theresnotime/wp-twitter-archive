@@ -110,11 +110,15 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
 
             if check_available(tweet_url):
                 latest_snapshot = get_latest_snapshot(tweet_url)
-                modified_cite_params = modify_cite_params(
-                    tweet, latest_snapshot[0], latest_snapshot[1]
-                )
-                wikitext = wikitext.replace(tweet, modified_cite_params)
-                changes += 1
+                print(f"[✓] Tweet already archived at {latest_snapshot[0]}")
+                if config.ARCHIVE_ONLY is False:
+                    modified_cite_params = modify_cite_params(
+                        tweet, latest_snapshot[0], latest_snapshot[1]
+                    )
+                    wikitext = wikitext.replace(tweet, modified_cite_params)
+                    changes += 1
+                else:
+                    print("[!] Archive only mode is enabled, skipping")
             else:
                 if config.VERBOSE:
                     print(tweet_url)
@@ -122,11 +126,12 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                 result = archive_page(tweet_url)
                 if result.url:
                     print(f"[✓] Tweet archived at {result.url}")
-                    modified_cite_params = modify_cite_params(
-                        tweet, result.url, date.today(), True
-                    )
-                    wikitext = wikitext.replace(tweet, modified_cite_params)
-                    changes += 1
+                    if config.ARCHIVE_ONLY is False:
+                        modified_cite_params = modify_cite_params(
+                            tweet, result.url, date.today(), True
+                        )
+                        wikitext = wikitext.replace(tweet, modified_cite_params)
+                        changes += 1
         else:
             print("[✓] Tweet citation already has an archive-url")
             already_done += 1
@@ -143,7 +148,7 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
     else:
         if already_done == len(cited_tweets):
             cache_ok_title(title)
-        print("[i] No changes made, skipping")
+        print("[i] No changes made")
 
 
 def check_ok_cache(title: str) -> bool:
@@ -239,8 +244,14 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
+        "--archive-only",
+        default=config.ARCHIVE_ONLY,
+        help="Only archive tweets which haven't been added to IA yet, don't save anything",
+        action="store_true",
+    )
+    parser.add_argument(
         "--diff-log",
-        default=config.VERBOSE,
+        default=config.DIFF_LOG,
         help="Log diffs to file (in ./logs/)",
         action="store_true",
     )
@@ -257,6 +268,7 @@ if __name__ == "__main__":
     config.RUN_LIMIT = args.limit
     config.SLEEP = args.sleep
     config.VERBOSE = args.verbose
+    config.ARCHIVE_ONLY = args.archive_only
     config.DIFF_LOG = args.diff_log
     config.DRY_RUN = args.dry_run
 
@@ -270,6 +282,8 @@ if __name__ == "__main__":
         print("[!] Doing a dry run")
     if config.DIFF_LOG:
         print("[!] Logging diffs to file")
+    if config.ARCHIVE_ONLY:
+        print("[!] Focusing on archiving 'at risk' tweets only")
     print(f"[i] Running on {config.SITE}")
     print(f"[i] Limiting to {config.RUN_LIMIT} pages")
     print(f"[i] Sleeping for {config.SLEEP} seconds between requests")
