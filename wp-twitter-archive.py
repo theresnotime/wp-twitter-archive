@@ -244,13 +244,15 @@ if __name__ == "__main__":
     config.DIFF_LOG = args.diff_log
     config.DRY_RUN = args.dry_run
 
+    # Init
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
     # Print some info
     print(f"WP Twitter Archiver thing v{__version__}")
     if config.DRY_RUN:
         print("[!] Doing a dry run")
     if config.DIFF_LOG:
-        if not os.path.exists("logs"):
-            os.makedirs("logs")
         print("[!] Logging diffs to file")
     print(f"[i] Running on {config.SITE}")
     print(f"[i] Limiting to {config.RUN_LIMIT} pages")
