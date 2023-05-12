@@ -94,11 +94,19 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
     wikitext = get_wikitext(title)
     old_wikitext = wikitext
     changes = 0
+    already_done = 0
     for tweet in cited_tweets:
         if check_already_archived(tweet) is None:
             print("[!] Tweet citation does not have an archive-url set")
-            tweet_info = get_tweet_info(tweet)
-            tweet_url = get_tweet_url(tweet_info[0][0], tweet_info[1][0])
+            try:
+                tweet_info = get_tweet_info(tweet)
+                tweet_url = get_tweet_url(tweet_info[0][0], tweet_info[1][0])
+            except IndexError:
+                print(tweet_info)
+                print("[!] Tweet citation is malformed, skipping")
+                log_malformed(title)
+                continue
+            
             if check_available(tweet_url):
                 latest_snapshot = get_latest_snapshot(tweet_url)
                 modified_cite_params = modify_cite_params(
@@ -112,6 +120,7 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                 print("[!] Tweet has not been archived, let's hope it's still live...")
         else:
             print("[✓] Tweet citation already has an archive-url")
+            already_done += 1
     if wikitext != old_wikitext:
         if config.DIFF_LOG:
             diff = difflib.unified_diff(
@@ -123,7 +132,32 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                 f.write("\n".join(list(diff)))
         add_archive_links(title, wikitext, changes)
     else:
+        if already_done == len(cited_tweets):
+            cache_ok_title(title)
         print("[i] No changes made, skipping")
+
+
+def check_ok_cache(title: str) -> bool:
+    with open("logs/ok.log", "r", encoding="utf-8") as f:
+        return title in f.read()
+
+
+def cache_ok_title(title: str) -> None:
+    with open("logs/ok.log", "a", encoding="utf-8") as f:
+        f.write(f"{title}\n")
+
+
+def log_malformed(title: str) -> None:
+    with open("logs/malformed.log", "a", encoding="utf-8") as f:
+        f.write(f"{title}\n")
+
+
+# TODO
+def archive_page(url: str) -> None:
+    """Archive a page on the Internet Archive"""
+    print(f"[+] Caching {url} on the Internet Archive")
+    if config.DRY_RUN is False:
+        requests.get(f"{config.IA_URL}/save/{url}")
 
 
 def modify_cite_params(cite_params: str, archive_url: str, archive_date: str) -> str:
@@ -228,6 +262,9 @@ if __name__ == "__main__":
         if count < config.RUN_LIMIT:
             count += 1
             print(f"\n[{count}/{config.RUN_LIMIT}] {title}")
+            if check_ok_cache(title):
+                print("[i] Already done, skipping expensive API calls")
+                continue
             wikitext = get_wikitext(title)
             cited_tweets = get_cite_tweets(wikitext)
             iterate_tweets(cited_tweets, title)
