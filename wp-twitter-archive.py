@@ -1,15 +1,13 @@
+import accounts
 import argparse
+import config
 import difflib
 import json
 import os
 import re
-import time
-
 import requests
+import time
 from pwiki.wiki import Wiki
-
-import accounts
-import config
 
 __version__ = "0.0.1"
 
