@@ -7,7 +7,6 @@ import os
 import re
 import requests
 import time
-from datetime import date
 from pwiki.wiki import Wiki
 
 __version__ = "0.0.1"
@@ -98,7 +97,7 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
     already_done = 0
     for tweet in cited_tweets:
         if config.ARCHIVE_ONLY:
-            if check_skip(tweet):
+            if check_skip_title(tweet):
                 print("[!] Archive only mode is enabled, tweet is in pre-skip list")
                 continue
         if check_already_archived(tweet) is None:
@@ -125,20 +124,13 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
                     print(
                         "[!] Archive only mode is enabled, skipping and adding to pre-skip list"
                     )
-                    add_to_skip(tweet)
+                    log_skip_title(tweet)
             else:
-                if config.VERBOSE:
-                    print(tweet_url)
-                print("[!] Tweet has not been archived, let's hope it's still live...")
-                result = archive_page(tweet_url)
-                if result.url:
-                    print(f"[✓] Tweet archived at {result.url}")
-                    if config.ARCHIVE_ONLY is False:
-                        modified_cite_params = modify_cite_params(
-                            tweet, result.url, date.today(), True
-                        )
-                        wikitext = wikitext.replace(tweet, modified_cite_params)
-                        changes += 1
+                print(
+                    f"[!] {tweet_url} has not been archived, let's hope it's still live..."
+                )
+                archive_page(tweet_url)
+                print("[✓] Tweet submitted for archiving")
         else:
             print("[✓] Tweet citation already has an archive-url")
             already_done += 1
@@ -154,42 +146,48 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
         add_archive_links(title, wikitext, changes)
     else:
         if already_done == len(cited_tweets):
-            cache_ok_title(title)
+            log_ok_title(title)
         print("[i] No changes made")
 
 
-def add_to_skip(tweet: str) -> None | bool:
+def log_skip_title(tweet: str) -> None | bool:
+    """Log a title that has been skipped"""
     with open("logs/skip.log", "a", encoding="utf-8") as f:
         f.write(f"{tweet}\n")
 
 
-def check_skip(tweet: str) -> bool:
+def check_skip_title(tweet: str) -> bool:
+    """Check if a title has already been skipped"""
     if os.path.exists("logs/skip.log") is False:
         return False
     with open("logs/skip.log", "r", encoding="utf-8") as f:
         return tweet in f.read()
 
 
-def check_ok_cache(title: str) -> bool:
+def check_ok_title(title: str) -> bool:
+    """Check if a title has already been checked and is OK"""
     if os.path.exists("logs/ok.log") is False:
         return False
     with open("logs/ok.log", "r", encoding="utf-8") as f:
         return title in f.read()
 
 
-def cache_ok_title(title: str) -> None:
+def log_ok_title(title: str) -> None:
+    """Log a title that has been checked and is OK"""
     with open("logs/ok.log", "a", encoding="utf-8") as f:
         f.write(f"{title}\n")
 
 
 def log_malformed(title: str) -> None:
+    """Log a malformed tweet citation"""
     with open("logs/malformed.log", "a", encoding="utf-8") as f:
         f.write(f"{title}\n")
 
 
 def archive_page(url: str) -> None:
     """Archive a page on the Internet Archive"""
-    print(f"[+] Caching {url} on the Internet Archive")
+    # TODO: Check if the Tweet is still live before submitting for archiving
+    print(f"[+] Archiving {url} on the Internet Archive")
     headers = {"Authorization": f"LOW {accounts.IA_KEY}:{accounts.IA_SECRET}"}
     result = requests.get(f"https://web.archive.org/save/{url}", headers=headers)
     return result
@@ -308,12 +306,13 @@ if __name__ == "__main__":
     print(f"[i] Sleeping for {config.SLEEP} seconds between requests")
 
     count = 0
-    titles = get_titles("api")
+    # titles = get_titles("api")
+    titles = ["Dedham, Massachusetts"]
     for title in titles:
         if count < config.RUN_LIMIT:
             count += 1
             print(f"\n[{count}/{config.RUN_LIMIT}] {title}")
-            if check_ok_cache(title):
+            if check_ok_title(title):
                 print("[i] Already done, skipping expensive API calls")
                 continue
             wikitext = get_wikitext(title)
