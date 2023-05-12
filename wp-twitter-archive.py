@@ -37,9 +37,11 @@ def get_titles(source: str) -> list:
     """Get a list of titles"""
     if source == "file":
         with open("titles.json", encoding="utf-8") as f:
+            print("[i] Getting list of titles from titles.json")
             data = json.load(f)
             return data["*"][0]["a"]["*"]
     elif source == "api":
+        print("[i] Getting list of titles from API (this may take a while)")
         wiki = Wiki(config.SITE, accounts.BOT_USERNAME, accounts.BOT_PASSWORD)
         data = wiki.what_transcludes_here("Template:Cite tweet", ns=0)
         return data
@@ -221,7 +223,7 @@ if __name__ == "__main__":
     print(f"[i] Sleeping for {config.SLEEP} seconds between requests")
 
     count = 0
-    titles = get_titles('api')
+    titles = get_titles("api")
     for title in titles:
         if count < config.RUN_LIMIT:
             count += 1
