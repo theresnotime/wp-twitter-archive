@@ -103,6 +103,7 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
         if check_already_archived(tweet) is None:
             print("[!] Tweet citation does not have an archive-url set")
             try:
+                log_todo_title(title)
                 tweet_info = get_tweet_info(tweet)
                 tweet_url = get_tweet_url(tweet_info[0][0], tweet_info[1][0])
             except IndexError:
@@ -148,6 +149,12 @@ def iterate_tweets(cited_tweets: list, title: str) -> None:
         if already_done == len(cited_tweets):
             log_ok_title(title)
         print("[i] No changes made")
+
+
+def log_todo_title(title: str) -> None:
+    """Log a title that needs to be edited"""
+    with open("logs/todo.log", "a", encoding="utf-8") as f:
+        f.write(f"{title}\n")
 
 
 def log_skip_title(tweet: str) -> None:
