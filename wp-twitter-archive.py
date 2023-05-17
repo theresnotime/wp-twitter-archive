@@ -4,6 +4,7 @@ import config
 import difflib
 import json
 import os
+import random
 import re
 import requests
 import time
@@ -314,6 +315,7 @@ if __name__ == "__main__":
 
     count = 0
     titles = get_titles("api")
+    random.shuffle(titles)
     for title in titles:
         if count < config.RUN_LIMIT:
             count += 1
